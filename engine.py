@@ -65,7 +65,9 @@ def train_one_epoch_distillation(teacher, student, criterion,
             outputs_teacher = teacher(samples)
             
             # Imeplemet knowledge distillation loss here
-            
+            loss_cls = criterion(outputs, targets)
+            loss_kl = kl_loss(F.log_softmax(outputs / temp, dim=1), F.softmax(outputs_teacher / temp, dim=1)) * (temp * temp)
+            loss = alpha * loss_cls + (1 - alpha) * loss_kl
             
             # *****************************************
         loss_value = loss.item()
