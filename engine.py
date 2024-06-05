@@ -65,9 +65,17 @@ def train_one_epoch_distillation(teacher, student, criterion,
             outputs_teacher = teacher(samples)
             
             # Imeplemet knowledge distillation loss here
-            loss_cls = criterion(outputs, targets)
-            loss_kl = kl_loss(F.log_softmax(outputs / temp, dim=1), F.softmax(outputs_teacher / temp, dim=1)) * (temp * temp)
-            loss = alpha * loss_cls + (1 - alpha) * loss_kl
+            # loss_cls = criterion(outputs, targets)
+            # loss_kl = kl_loss(F.log_softmax(outputs / temp, dim=1), F.softmax(outputs_teacher / temp, dim=1)) * (temp * temp)
+            # loss = alpha * loss_cls + (1 - alpha) * loss_kl
+            soft_targets = torch.nn.functional.softmax(outputs_teacher / temp, dim=1)
+            soft_outputs = torch.nn.functional.log_softmax(outputs / temp, dim=1)
+
+            soft_targets_loss = torch.sum(soft_targets * (soft_targets.log() - soft_outputs)) / soft_outputs.size()[0] * (temp ** 2)
+
+            label_loss = criterion(outputs, targets)
+
+            loss = (alpha * soft_targets_loss) + ((1-alpha) * label_loss)
             
             # *****************************************
         loss_value = loss.item()
